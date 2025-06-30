@@ -8,6 +8,9 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector4;
 import com.badlogic.gdx.utils.ScreenUtils;
 
+import java.util.Arrays;
+import java.util.Scanner;
+
 public class GameScreen implements Screen {
     final Main game;
     ShapeRenderer shapeRenderer;
@@ -16,6 +19,14 @@ public class GameScreen implements Screen {
     float cellSize = gridSize / 3f;
     float startX;
     float startY;
+
+    int[][] matrix = {
+        {0, 0, 0},
+        {0, 0, 0},
+        {0, 0, 0}
+    };
+
+    int currentPlayer = 1;
 
     public GameScreen(final Main game) {
         this.game = game;
@@ -35,13 +46,17 @@ public class GameScreen implements Screen {
 
         game.batch.begin();
         drawGrid(); // Optional: your grid drawing function
+        drawSymbols();
         game.batch.end();
 
-        logic();
+        if (logic(currentPlayer))
+            currentPlayer = 3 - currentPlayer;
+//        System.out.println(currentPlayer);
 
     }
 
-    private void logic(){
+    private boolean logic(int player){
+
         if (Gdx.input.justTouched()) {
             Vector2 touchPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
             game.viewport.unproject(touchPos);
@@ -49,14 +64,44 @@ public class GameScreen implements Screen {
 //            System.out.println(startX + " " + startY + " " + touchPos);
             if(touchPos.x > startX && touchPos.x < startX + 3 * cellSize
                 && touchPos.y > startY && touchPos.y < startY + 3 * cellSize)
-                performPlayerAction(touchPos);
+                return performPlayerAction(touchPos, player);
         }
+        return false;
     }
 
-    private void performPlayerAction(Vector2 touchPos) {
-        if (touchPos.x < startX + cellSize && touchPos.y < startY + cellSize) System.out.println('0');
+    private boolean performPlayerAction(Vector2 touchPos, int player) {
+        int x = 0, y = 0;
+        boolean valid = false;
+        if (touchPos.x < startX + cellSize && touchPos.y < startY + cellSize) { x = 2; y = 0; valid = true;}
+        else if (touchPos.x < startX + 2*cellSize && touchPos.y < startY + cellSize) { x = 2; y = 1; valid = true;}
+        else if (touchPos.x < startX + 3*cellSize && touchPos.y < startY + cellSize) { x = 2; y = 2; valid = true;}
+
+        else if (touchPos.x < startX + cellSize && touchPos.y < startY + 2*cellSize) { x = 1; y = 0; valid = true;}
+        else if (touchPos.x < startX + 2*cellSize && touchPos.y < startY + 2*cellSize) { x = 1; y = 1; valid = true;}
+        else if (touchPos.x < startX + 3*cellSize && touchPos.y < startY + 2*cellSize) { x = 1; y = 2; valid = true;}
+
+        else if (touchPos.x < startX + cellSize && touchPos.y < startY + 3*cellSize) { x = 0; y = 0; valid = true;}
+        else if (touchPos.x < startX + 2*cellSize && touchPos.y < startY + 3*cellSize) { x = 0; y = 1; valid = true;}
+        else if (touchPos.x < startX + 3*cellSize && touchPos.y < startY + 3*cellSize) { x = 0; y = 2; valid = true;}
+
+        if (valid)
+            return updateBoard(x, y, player);
+        return false;
     }
 
+    private boolean updateBoard(int x, int y, int player){
+        if (matrix[x][y] != 0){
+            System.out.println("Box Filled");
+//            logic(player); no need to call this as logic() is already under a loop. calling logic() will result in infinite recursion.
+            return false;
+        } else {
+            matrix[x][y] = player;
+            System.out.println(Arrays.deepToString(matrix));
+            return true;
+        }
+
+
+    }
 
     private void drawGrid() {
         ShapeRenderer shapeRenderer = new ShapeRenderer();
@@ -80,6 +125,76 @@ public class GameScreen implements Screen {
         shapeRenderer.end();
         shapeRenderer.dispose();
     }
+    private void drawSymbols() {
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+
+        float padding = 15f; // padding from cell edges
+        float thickness = 5f; // line thickness for boldness
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                float x = startX + col * cellSize;
+                float y = startY + row * cellSize;
+
+                int flippedRow = 2 - row; // flip vertically to match logic
+
+                if (matrix[flippedRow][col] == 1) {
+                    // RED X
+                    shapeRenderer.setColor(Color.RED);
+                    drawThickLine(x + padding, y + padding, x + cellSize - padding, y + cellSize - padding, thickness);
+                    drawThickLine(x + cellSize - padding, y + padding, x + padding, y + cellSize - padding, thickness);
+
+                } else if (matrix[flippedRow][col] == 2) {
+                    // BLUE O
+                    shapeRenderer.setColor(Color.BLUE);
+                    drawHollowCircle(x + cellSize / 2, y + cellSize / 2, (cellSize / 2 - padding), 5f);
+
+                }
+            }
+        }
+
+        shapeRenderer.end();
+    }
+    private void drawThickLine(float x1, float y1, float x2, float y2, float thickness) {
+        // Calculate direction vector
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float len = (float) Math.sqrt(dx * dx + dy * dy);
+        dx /= len;
+        dy /= len;
+
+        // Calculate perpendicular vector for thickness
+        float px = -dy * thickness / 2;
+        float py = dx * thickness / 2;
+
+        // Draw a quad (rectangle) for thickness
+        shapeRenderer.triangle(x1 + px, y1 + py, x1 - px, y1 - py, x2 + px, y2 + py);
+        shapeRenderer.triangle(x2 + px, y2 + py, x2 - px, y2 - py, x1 - px, y1 - py);
+    }
+    private void drawHollowCircle(float cx, float cy, float radius, float thickness) {
+        int segments = 100;
+        float angleStep = 2 * (float) Math.PI / segments;
+
+        for (int i = 0; i < segments; i++) {
+            float angle1 = i * angleStep;
+            float angle2 = (i + 1) * angleStep;
+
+            float x1Outer = cx + (float) Math.cos(angle1) * radius;
+            float y1Outer = cy + (float) Math.sin(angle1) * radius;
+            float x2Outer = cx + (float) Math.cos(angle2) * radius;
+            float y2Outer = cy + (float) Math.sin(angle2) * radius;
+
+            float x1Inner = cx + (float) Math.cos(angle1) * (radius - thickness);
+            float y1Inner = cy + (float) Math.sin(angle1) * (radius - thickness);
+            float x2Inner = cx + (float) Math.cos(angle2) * (radius - thickness);
+            float y2Inner = cy + (float) Math.sin(angle2) * (radius - thickness);
+
+            // Draw two triangles to simulate a ring segment
+            shapeRenderer.triangle(x1Outer, y1Outer, x2Outer, y2Outer, x1Inner, y1Inner);
+            shapeRenderer.triangle(x2Outer, y2Outer, x2Inner, y2Inner, x1Inner, y1Inner);
+        }
+    }
+
 
     @Override
     public void resize(int width, int height) {
