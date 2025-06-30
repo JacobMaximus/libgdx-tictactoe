@@ -27,19 +27,16 @@ public class GameLogic {
     }
 
     public boolean logic(Vector2 touchPos, float startX, float startY, float cellSize, int player){
-        if (Gdx.input.justTouched()) {
-            Vector2 touchPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
-            game.viewport.unproject(touchPos);
 
 //            System.out.println(startX + " " + startY + " " + touchPos);
-            if(touchPos.x > startX && touchPos.x < startX + 3 * cellSize
-                && touchPos.y > startY && touchPos.y < startY + 3 * cellSize)
-                return performPlayerAction(touchPos, player);
-        }
+        if(touchPos.x > startX && touchPos.x < startX + 3 * cellSize
+            && touchPos.y > startY && touchPos.y < startY + 3 * cellSize)
+            return performPlayerAction(touchPos, startX, startY, cellSize, player);
+
         return false;
     }
 
-    private boolean performPlayerAction(Vector2 touchPos, int player) {
+    private boolean performPlayerAction(Vector2 touchPos, float startX, float startY, float cellSize, int player) {
         int x = 0, y = 0;
         boolean valid = false;
         if (touchPos.x < startX + cellSize && touchPos.y < startY + cellSize) { x = 2; y = 0; valid = true;}
@@ -69,5 +66,14 @@ public class GameLogic {
             System.out.println(Arrays.deepToString(matrix));
             return true;
         }
+    }
+
+    public int winner(){
+        for (int i = 0; i < 3; i++){
+            for (int j = 0; j < 3; j++){
+//                if (matrix[i][j] == )
+            }
+        }
+        return 0;
     }
 }

@@ -52,9 +52,12 @@ public class GameScreen implements Screen {
         drawSymbols();
         game.batch.end();
 
-        if (gameLogic.logic(gameLogic.currentPlayer))
-            gameLogic.currentPlayer = 3 - gameLogic.currentPlayer;
-
+        if (Gdx.input.justTouched()) {
+            Vector2 touchPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
+            game.viewport.unproject(touchPos);
+            if (gameLogic.logic(touchPos, startX, startY, cellSize, gameLogic.currentPlayer))
+                gameLogic.currentPlayer = 3 - gameLogic.currentPlayer;
+        }
 
 //        if (logic(currentPlayer))
 //            currentPlayer = 3 - currentPlayer;
