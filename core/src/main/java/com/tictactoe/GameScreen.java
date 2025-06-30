@@ -13,6 +13,7 @@ import java.util.Scanner;
 
 public class GameScreen implements Screen {
     final Main game;
+    GameLogic gameLogic;
     ShapeRenderer shapeRenderer;
 
     float gridSize = 300; // size of the whole grid (square)
@@ -20,17 +21,19 @@ public class GameScreen implements Screen {
     float startX;
     float startY;
 
-    int[][] matrix = {
-        {0, 0, 0},
-        {0, 0, 0},
-        {0, 0, 0}
-    };
-
-    int currentPlayer = 1;
+//    int[][] matrix = {
+//        {0, 0, 0},
+//        {0, 0, 0},
+//        {0, 0, 0}
+//    };
+//
+//    int currentPlayer = 1;
 
     public GameScreen(final Main game) {
         this.game = game;
+        this.gameLogic = new GameLogic(game);
         shapeRenderer = new ShapeRenderer();
+
     }
 
     @Override
@@ -49,57 +52,13 @@ public class GameScreen implements Screen {
         drawSymbols();
         game.batch.end();
 
-        if (logic(currentPlayer))
-            currentPlayer = 3 - currentPlayer;
+        if (gameLogic.logic(gameLogic.currentPlayer))
+            gameLogic.currentPlayer = 3 - gameLogic.currentPlayer;
+
+
+//        if (logic(currentPlayer))
+//            currentPlayer = 3 - currentPlayer;
 //        System.out.println(currentPlayer);
-
-    }
-
-    private boolean logic(int player){
-
-        if (Gdx.input.justTouched()) {
-            Vector2 touchPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
-            game.viewport.unproject(touchPos);
-
-//            System.out.println(startX + " " + startY + " " + touchPos);
-            if(touchPos.x > startX && touchPos.x < startX + 3 * cellSize
-                && touchPos.y > startY && touchPos.y < startY + 3 * cellSize)
-                return performPlayerAction(touchPos, player);
-        }
-        return false;
-    }
-
-    private boolean performPlayerAction(Vector2 touchPos, int player) {
-        int x = 0, y = 0;
-        boolean valid = false;
-        if (touchPos.x < startX + cellSize && touchPos.y < startY + cellSize) { x = 2; y = 0; valid = true;}
-        else if (touchPos.x < startX + 2*cellSize && touchPos.y < startY + cellSize) { x = 2; y = 1; valid = true;}
-        else if (touchPos.x < startX + 3*cellSize && touchPos.y < startY + cellSize) { x = 2; y = 2; valid = true;}
-
-        else if (touchPos.x < startX + cellSize && touchPos.y < startY + 2*cellSize) { x = 1; y = 0; valid = true;}
-        else if (touchPos.x < startX + 2*cellSize && touchPos.y < startY + 2*cellSize) { x = 1; y = 1; valid = true;}
-        else if (touchPos.x < startX + 3*cellSize && touchPos.y < startY + 2*cellSize) { x = 1; y = 2; valid = true;}
-
-        else if (touchPos.x < startX + cellSize && touchPos.y < startY + 3*cellSize) { x = 0; y = 0; valid = true;}
-        else if (touchPos.x < startX + 2*cellSize && touchPos.y < startY + 3*cellSize) { x = 0; y = 1; valid = true;}
-        else if (touchPos.x < startX + 3*cellSize && touchPos.y < startY + 3*cellSize) { x = 0; y = 2; valid = true;}
-
-        if (valid)
-            return updateBoard(x, y, player);
-        return false;
-    }
-
-    private boolean updateBoard(int x, int y, int player){
-        if (matrix[x][y] != 0){
-            System.out.println("Box Filled");
-//            logic(player); no need to call this as logic() is already under a loop. calling logic() will result in infinite recursion.
-            return false;
-        } else {
-            matrix[x][y] = player;
-            System.out.println(Arrays.deepToString(matrix));
-            return true;
-        }
-
 
     }
 
@@ -138,13 +97,13 @@ public class GameScreen implements Screen {
 
                 int flippedRow = 2 - row; // flip vertically to match logic
 
-                if (matrix[flippedRow][col] == 1) {
+                if (gameLogic.matrix[flippedRow][col] == 1) {
                     // RED X
                     shapeRenderer.setColor(Color.RED);
                     drawThickLine(x + padding, y + padding, x + cellSize - padding, y + cellSize - padding, thickness);
                     drawThickLine(x + cellSize - padding, y + padding, x + padding, y + cellSize - padding, thickness);
 
-                } else if (matrix[flippedRow][col] == 2) {
+                } else if (gameLogic.matrix[flippedRow][col] == 2) {
                     // BLUE O
                     shapeRenderer.setColor(Color.BLUE);
                     drawHollowCircle(x + cellSize / 2, y + cellSize / 2, (cellSize / 2 - padding), 5f);
