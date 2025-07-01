@@ -66,12 +66,24 @@ public class GameScreen implements Screen {
         game.batch.begin();
         drawGrid(); // Optional: your grid drawing function
         drawSymbols();
-        gameStatus();
+//        gameStatus();
         game.batch.end();
 
         game.batch.begin();
+
         font.setColor(Color.BLACK);
-        font.draw(game.batch, "Test Message", 100, 100);
+
+// Position both players centered *above* the grid
+        float scoreY = startY + gridSize + 70;  // well above the grid, but within viewport
+        float p1X = startX + 15;                // near left edge of grid
+        float p2X = startX + gridSize - 135;    // near right edge of grid
+
+        font.draw(game.batch, "Player 1", p1X, scoreY+5);
+        font.draw(game.batch, "Score: " + gameLogic.playerScore.get(1), p1X, scoreY - 30);
+
+        font.draw(game.batch, "Player 2", p2X, scoreY+5);
+        font.draw(game.batch, "Score: " + gameLogic.playerScore.get(2), p2X, scoreY - 30);
+
         game.batch.end();
 
         if (!gameLogic.gameOver && Gdx.input.justTouched()) {
