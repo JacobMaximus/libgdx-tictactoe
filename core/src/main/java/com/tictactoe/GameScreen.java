@@ -3,6 +3,10 @@ package com.tictactoe;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector4;
@@ -21,18 +25,30 @@ public class GameScreen implements Screen {
     float startX;
     float startY;
 
-//    int[][] matrix = {
-//        {0, 0, 0},
-//        {0, 0, 0},
-//        {0, 0, 0}
-//    };
-//
-//    int currentPlayer = 1;
+    float endMessageTimer = 0f;
+    String endMessage = "";
+    boolean roundEnded = false;
+
+    BitmapFont font;
+//    int currentWinner = 0;
 
     public GameScreen(final Main game) {
         this.game = game;
         this.gameLogic = new GameLogic(game);
         shapeRenderer = new ShapeRenderer();
+
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("fonts/OpenSans-Bold.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+
+        parameter.size = 64; // HIGH resolution
+        parameter.minFilter = Texture.TextureFilter.Linear;
+        parameter.magFilter = Texture.TextureFilter.Linear;
+
+        font = generator.generateFont(parameter);
+        font.getData().setScale(0.5f); // Optional, scale it to look better in-game
+        generator.dispose();
+
+
 
     }
 
@@ -50,20 +66,64 @@ public class GameScreen implements Screen {
         game.batch.begin();
         drawGrid(); // Optional: your grid drawing function
         drawSymbols();
+        gameStatus();
         game.batch.end();
 
-        if (Gdx.input.justTouched()) {
+        game.batch.begin();
+        font.setColor(Color.BLACK);
+        font.draw(game.batch, "Test Message", 100, 100);
+        game.batch.end();
+
+        if (!gameLogic.gameOver && Gdx.input.justTouched()) {
             Vector2 touchPos = new Vector2(Gdx.input.getX(), Gdx.input.getY());
             game.viewport.unproject(touchPos);
-            if (gameLogic.logic(touchPos, startX, startY, cellSize, gameLogic.currentPlayer))
-                gameLogic.currentPlayer = 3 - gameLogic.currentPlayer;
+            if (gameLogic.logic(touchPos, startX, startY, cellSize, gameLogic.currentPlayer)){
+                int winner = gameLogic.winner();
+                if (winner != 0){
+                    roundEnded = true;
+                    endMessageTimer = 2f; // 2 seconds
+                    if (winner == 3){
+                        endMessage = "DRAW!";
+                    } else {
+                        endMessage = "PLAYER " + winner + " - WINNER";
+                    }
+                    System.out.println(gameLogic.playerScore.get(winner) + " " + gameLogic.playerScore.get(3 - winner));
+
+                }
+            }
         }
 
-//        if (logic(currentPlayer))
-//            currentPlayer = 3 - currentPlayer;
-//        System.out.println(currentPlayer);
+        if (roundEnded) {
+            endMessageTimer -= delta;
+            if (endMessageTimer <= 0) {
+                roundEnded = false;
+                endMessage = "";
+//                currentWinner = 0;
+                gameLogic.newGame();
+            }
+        }
 
     }
+
+    private void gameStatus() {
+        // --- Always draw the scores ---
+        font.setColor(Color.BLACK);
+        font.draw(game.batch, "Player 1", startX - 90, startY + gridSize + 60);
+        font.draw(game.batch, "" + gameLogic.playerScore.get(1), startX - 70, startY + gridSize + 30);
+
+        font.draw(game.batch, "Player 2", startX + gridSize + 10, startY + gridSize + 60);
+        font.draw(game.batch, "" + gameLogic.playerScore.get(2), startX + gridSize + 30, startY + gridSize + 30);
+
+        // --- Only show this during round end ---
+        if (roundEnded && !endMessage.isEmpty()) {
+            font.setColor(Color.FIREBRICK);
+            float msgX = startX + gridSize / 2 - font.getRegion().getRegionWidth() / 2f;
+            float msgY = startY + gridSize / 2;
+            font.draw(game.batch, endMessage, msgX, msgY);
+        }
+    }
+
+
 
     private void drawGrid() {
         ShapeRenderer shapeRenderer = new ShapeRenderer();
@@ -182,6 +242,7 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-
+        font.dispose();
+        shapeRenderer.dispose();
     }
 }
