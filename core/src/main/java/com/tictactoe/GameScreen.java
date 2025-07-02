@@ -32,6 +32,9 @@ public class GameScreen implements Screen {
     BitmapFont font;
 //    int currentWinner = 0;
 
+    GlyphLayout layout = new GlyphLayout();  // Used to measure text size
+
+
     public GameScreen(final Main game) {
         this.game = game;
         this.gameLogic = new GameLogic(game);
@@ -64,26 +67,15 @@ public class GameScreen implements Screen {
         game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
 
         game.batch.begin();
-        drawGrid(); // Optional: your grid drawing function
-        drawSymbols();
-//        gameStatus();
+            drawGrid();
+            shapeRenderer.end();
+            drawSymbols();
+            shapeRenderer.end();
         game.batch.end();
 
         game.batch.begin();
-
-        font.setColor(Color.BLACK);
-
-// Position both players centered *above* the grid
-        float scoreY = startY + gridSize + 70;  // well above the grid, but within viewport
-        float p1X = startX + 15;                // near left edge of grid
-        float p2X = startX + gridSize - 135;    // near right edge of grid
-
-        font.draw(game.batch, "Player 1", p1X, scoreY+5);
-        font.draw(game.batch, "Score: " + gameLogic.playerScore.get(1), p1X, scoreY - 30);
-
-        font.draw(game.batch, "Player 2", p2X, scoreY+5);
-        font.draw(game.batch, "Score: " + gameLogic.playerScore.get(2), p2X, scoreY - 30);
-
+            gameScore();
+            drawWinnerMessage();
         game.batch.end();
 
         if (!gameLogic.gameOver && Gdx.input.justTouched()) {
@@ -117,20 +109,35 @@ public class GameScreen implements Screen {
 
     }
 
-    private void gameStatus() {
-        // --- Always draw the scores ---
+    private void gameScore() {
         font.setColor(Color.BLACK);
-        font.draw(game.batch, "Player 1", startX - 90, startY + gridSize + 60);
-        font.draw(game.batch, "" + gameLogic.playerScore.get(1), startX - 70, startY + gridSize + 30);
+    // Position both players centered *above* the grid
+        float scoreY = startY + gridSize + 70;  // well above the grid, but within viewport
+        float p1X = startX + 15;                // near left edge of grid
+        float p2X = startX + gridSize - 135;    // near right edge of grid
 
-        font.draw(game.batch, "Player 2", startX + gridSize + 10, startY + gridSize + 60);
-        font.draw(game.batch, "" + gameLogic.playerScore.get(2), startX + gridSize + 30, startY + gridSize + 30);
+        font.draw(game.batch, "Player 1", p1X, scoreY+5);
+        font.draw(game.batch, "Score: " + gameLogic.playerScore.get(1), p1X, scoreY - 30);
 
-        // --- Only show this during round end ---
-        if (roundEnded && !endMessage.isEmpty()) {
-            font.setColor(Color.FIREBRICK);
-            float msgX = startX + gridSize / 2 - font.getRegion().getRegionWidth() / 2f;
-            float msgY = startY + gridSize / 2;
+        font.draw(game.batch, "Player 2", p2X, scoreY+5);
+        font.draw(game.batch, "Score: " + gameLogic.playerScore.get(2), p2X, scoreY - 30);
+    }
+    private void drawWinnerMessage() {
+        if (roundEnded && endMessage != null && !endMessage.isEmpty()) {
+//            if (3 - gameLogic.currentPlayer == 1)
+//                font.setColor(Color.FIREBRICK);
+//            else
+//                font.setColor(Color.BLUE);
+            // smarter way to write the logical statement:
+            int winnerPlayer = 3 - gameLogic.currentPlayer;
+            font.setColor(winnerPlayer == 1 ? Color.FIREBRICK : Color.BLUE);
+
+
+            layout.setText(font, endMessage);
+
+            float msgX = startX + gridSize / 2f - layout.width / 2f;
+            float msgY = startY - 30f; // 30 pixels below the grid
+
             font.draw(game.batch, endMessage, msgX, msgY);
         }
     }
