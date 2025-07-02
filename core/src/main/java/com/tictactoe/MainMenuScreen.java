@@ -4,6 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.tictactoe.firebase.FirebaseService;
+
+import java.util.Scanner;
 
 public class MainMenuScreen implements Screen {
     final Main game;
@@ -26,10 +29,30 @@ public class MainMenuScreen implements Screen {
         game.batch.end();
 
         if (Gdx.input.isTouched()) {
-            game.setScreen(new GameScreen(game));
-            dispose();
+//            game.setScreen(new GameScreen(game));
+//            dispose();
+            String roomCode = onCreateRoomClicked();
+           onJoinRoomClicked(roomCode);
         }
     }
+
+    public String onCreateRoomClicked() {
+        String myRoomCode = FirebaseService.createRoom();
+        System.out.println("My Room Code: " + myRoomCode);
+        // Optionally, store this to show on screen or switch to GameScreen
+        return myRoomCode;
+    }
+    public void onJoinRoomClicked(String enteredCode) {
+        boolean success = FirebaseService.joinRoom(enteredCode);
+        if (success) {
+            System.out.println("Joined room " + enteredCode);
+//            game.setScreen(new GameScreen(game, enteredCode)); // Pass roomCode to GameScreen
+        } else {
+            System.out.println("Invalid room code.");
+        }
+    }
+
+
 
     @Override
     public void resize(int width, int height) {
